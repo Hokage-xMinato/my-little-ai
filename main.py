@@ -10,7 +10,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 # Gemini API Key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-bot_username = bot.get_me().username
+
 
 # Gemini API Endpoint (Flash model)
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
@@ -53,11 +53,11 @@ def send_long_message(bot, chat_id, text):
 def handle_message(update, context):
     message = update.message
     user_text = message.text
-
+    bot_username = context.bot.username
     # If the message is from a group and the bot is mentioned
     if message.chat.type in ['group', 'supergroup']:
         if f"@{bot_username}" in user_text:
-            clean_text = user_text.replace(f"@{context.bot.username}", "").strip()
+            clean_text = user_text.replace(f"@{bot_username}", "").strip()
             gemini_response = get_gemini_reply(clean_text)
             send_long_message(context.bot, message.chat_id, gemini_response)
     
