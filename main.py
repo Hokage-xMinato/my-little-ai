@@ -10,6 +10,8 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 # Gemini API Key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+bot_username = bot.get_me().username
+
 # Gemini API Endpoint (Flash model)
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
 
@@ -42,6 +44,11 @@ def get_gemini_reply(message_text):
     else:
         return "Oops! I couldn’t get a reply from Gemini."
 
+def send_long_message(bot, chat_id, text):
+    max_length = 4096
+    for i in range(0, len(text), max_length):
+        bot.send_message(chat_id=chat_id, text=text[i:i+max_length])
+
 # Handler for incoming Telegram messages
 def handle_message(update, context):
     message = update.message
@@ -49,18 +56,18 @@ def handle_message(update, context):
 
     # If the message is from a group and the bot is mentioned
     if message.chat.type in ['group', 'supergroup']:
-        if f"@{context.bot.username}" in user_text:
+        if f"@{bot_username}" in user_text:
             clean_text = user_text.replace(f"@{context.bot.username}", "").strip()
             gemini_response = get_gemini_reply(clean_text)
-            message.reply_text(gemini_response)
+            send_long_message(context.bot, message.chat_id, gemini_response)
     
     # If the message is from a private chat (DM)
     elif message.chat.type == 'private':
         gemini_response = get_gemini_reply(user_text)
-        message.reply_text(gemini_response)
+        send_long_message(context.bot, message.chat_id, gemini_response)
 
 # Set up dispatcher
-dispatcher = Dispatcher(bot, None, workers=0)
+dispatcher = Dispatcher(bot, None, workers=4)
 dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
 # Webhook route
