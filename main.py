@@ -44,9 +44,20 @@ def get_gemini_reply(message_text):
 
 # Handler for incoming Telegram messages
 def handle_message(update, context):
-    user_message = update.message.text
-    reply = get_gemini_reply(user_message)
-    update.message.reply_text(reply)
+    message = update.message
+    user_text = message.text
+
+    # If the message is from a group and the bot is mentioned
+    if message.chat.type in ['group', 'supergroup']:
+        if f"@{context.bot.username}" in user_text:
+            clean_text = user_text.replace(f"@{context.bot.username}", "").strip()
+            gemini_response = get_gemini_reply(clean_text)
+            message.reply_text(gemini_response)
+    
+    # If the message is from a private chat (DM)
+    elif message.chat.type == 'private':
+        gemini_response = get_gemini_reply(user_text)
+        message.reply_text(gemini_response)
 
 # Set up dispatcher
 dispatcher = Dispatcher(bot, None, workers=0)
