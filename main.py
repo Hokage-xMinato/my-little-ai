@@ -1,55 +1,68 @@
 from flask import Flask, request
 from telegram import Bot, Update
 from telegram.ext import Dispatcher, MessageHandler, Filters
-import requests, os
+import requests
+import os
 
-app = Flask(__name__)
-
-# Environment Variables
+# Telegram Bot Token
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+
+# Gemini API Key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Set up Telegram Bot
+# Gemini API Endpoint (Flash model)
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+
+# Set up Flask app
+app = Flask(__name__)
 bot = Bot(token=TELEGRAM_TOKEN)
 
+# Function to fetch reply from Gemini AI
+def get_gemini_reply(message_text):
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": message_text}
+                ]
+            }
+        ]
+    }
+
+    response = requests.post(GEMINI_API_URL, headers=headers, json=data)
+
+    if response.status_code == 200:
+        result = response.json()
+        reply_text = result['candidates'][0]['content']['parts'][0]['text']
+        return reply_text
+    else:
+        return "Oops! I couldn’t get a reply from Gemini."
+
+# Handler for incoming Telegram messages
 def handle_message(update, context):
     user_message = update.message.text
-    response = ask_gemini(user_message)
-    update.message.reply_text(response)
+    reply = get_gemini_reply(user_message)
+    update.message.reply_text(reply)
 
-def ask_gemini(prompt):
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {GEMINI_API_KEY}"
-    }
-    data = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
-    r = requests.post(url, headers=headers, json=data)
-    result = r.json()
-    try:
-        reply = result['candidates'][0]['content']['parts'][0]['text']
-    except:
-        reply = "Oops! I couldn’t get a reply from Gemini."
-    return reply
+# Set up dispatcher
+dispatcher = Dispatcher(bot, None, workers=0)
+dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
-# Webhook Route
+# Webhook route
 @app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
-    dp.process_update(update)
-    return "ok"
+    dispatcher.process_update(update)
+    return "OK", 200
 
-# Dispatcher
-dp = Dispatcher(bot, None, workers=0)
-dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-
-# Home Route (for pinging)
-@app.route("/", methods=["GET"])
+# Health check route
+@app.route("/")
 def index():
-    return "Bot is running!"
+    return "Bot is live!"
 
-# Run App
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
