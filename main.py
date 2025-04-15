@@ -3,6 +3,9 @@ from telegram import Bot, Update
 from telegram.ext import Dispatcher, MessageHandler, Filters
 import requests
 import os
+from telegram.ext import InlineQueryHandler
+from telegram import InlineQueryResultArticle, InputTextMessageContent
+from uuid import uuid4
 
 # Telegram Bot Token
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -66,9 +69,29 @@ def handle_message(update, context):
         gemini_response = get_gemini_reply(user_text)
         send_long_message(context.bot, message.chat_id, gemini_response)
 
+def inline_query(update, context):
+    query = update.inline_query.query
+
+    if not query:
+        return  # No query, do nothing
+
+    # Get Gemini reply
+    gemini_response = get_gemini_reply(query)
+
+    results = [
+        InlineQueryResultArticle(
+            id=str(uuid4()),
+            title="Ask Gemini",
+            input_message_content=InputTextMessageContent(gemini_response)
+        )
+    ]
+
+    update.inline_query.answer(results, cache_time=1)
+
 # Set up dispatcher
 dispatcher = Dispatcher(bot, None, workers=4)
 dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+dispatcher.add_handler(InlineQueryHandler(inline_query))
 
 # Webhook route
 @app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
