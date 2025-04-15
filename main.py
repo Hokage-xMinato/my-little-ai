@@ -88,6 +88,14 @@ def inline_query(update, context):
 
     update.inline_query.answer(results, cache_time=1)
 
+def handle_message(update, context):
+    message = update.message
+    user_text = message.text.lower()  # lowercase for safe matching
+
+    if "gemini" in user_text:
+        gemini_response = get_gemini_reply(user_text)
+        send_long_message(context.bot, message.chat_id, gemini_response)
+
 # Set up dispatcher
 dispatcher = Dispatcher(bot, None, workers=4)
 dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
