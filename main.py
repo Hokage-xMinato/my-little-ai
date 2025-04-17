@@ -96,6 +96,8 @@ def handle_message(update, context):
         gemini_response = get_gemini_reply(user_text)
         send_long_message(context.bot, message.chat_id, gemini_response)
 
+
+
 # Set up dispatcher
 dispatcher = Dispatcher(bot, None, workers=4)
 dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
@@ -108,6 +110,16 @@ def webhook():
     dispatcher.process_update(update)
     return "OK", 200
 
+
+if "message" in data:
+    chat_id = data["message"]["chat"]["id"]
+    text = data["message"].get("text", "")
+
+    # If it's a private DM
+    if data["message"]["chat"]["type"] == "private":
+        reply = your_gemini_ai_function(text)
+        send_message(chat_id, reply)
+        
 # Health check route
 @app.route("/")
 def index():
