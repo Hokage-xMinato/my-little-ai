@@ -6,6 +6,7 @@ import os
 from telegram.ext import InlineQueryHandler
 from telegram import InlineQueryResultArticle, InputTextMessageContent
 from uuid import uuid4
+from telegram.ext import CommandHandler
 
 # Telegram Bot Token
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -91,10 +92,29 @@ def inline_query(update, context):
 def handle_message(update, context):
     message = update.message
     user_text = message.text.lower()  # lowercase for safe matching
-
+if message.chat.type in ['group', 'supergroup']:
     if "gemini" in user_text:
         gemini_response = get_gemini_reply(user_text)
         send_long_message(context.bot, message.chat_id, gemini_response)
+        elif message.chat.type == 'private':
+        gemini_response = get_gemini_reply(user_text)
+        send_long_message(context.bot, message.chat.id, gemini_response)
+
+def overthink(update, context):
+    message = update.message
+
+    if message.reply_to_message:
+        target_text = message.reply_to_message.text
+    elif context.args:
+        target_text = ' '.join(context.args)
+    else:
+        message.reply_text("Please reply to a message or provide text to overthink.")
+        return
+
+    prompt = f"Overthink this message thoroughly. List all possible specific scenarios, outcomes, their descriptions, and give a likelihood rating out of 10 for each. try exploring all aspects:\n\n\"{target_text}\""
+
+    gemini_response = get_gemini_reply(prompt)
+    send_long_message(context.bot, message.chat.id, gemini_response)
 
 
 
