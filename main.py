@@ -75,7 +75,7 @@ def inline_query(update, context):
 
     if not query:
         return  # No query, do nothing
-        prompt1 = f"answer under 100 word:\n\n\"{query}\""
+        prompt1 = f"{query}"
 
     # Get Gemini reply
     gemini_response = get_gemini_reply(prompt1)
