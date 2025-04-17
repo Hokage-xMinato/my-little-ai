@@ -75,7 +75,7 @@ def inline_query(update, context):
 
     if not query:
         return  # No query, do nothing
-        prompt1 = f"answer the message under 100 word and also if u want u can be more short but be playful and funny and to be as short as u can u should not explain the question and skip directly to answer:\n\n\"{query}\""
+        prompt1 = f"answer under 100 word:\n\n\"{query}\""
 
     # Get Gemini reply
     gemini_response = get_gemini_reply(prompt1)
