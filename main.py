@@ -92,14 +92,15 @@ def inline_query(update, context):
 def handle_message(update, context):
     message = update.message
     user_text = message.text.lower()  # lowercase for safe matching
-if message.chat.type in ['group', 'supergroup']:
-    if "gemini" in user_text:
-        gemini_response = get_gemini_reply(user_text)
-        send_long_message(context.bot, message.chat_id, gemini_response)
-        elif message.chat.type == 'private':
+
+    if message.chat.type in ['group', 'supergroup']:
+        if "gemini" in user_text:
+            gemini_response = get_gemini_reply(user_text)
+            send_long_message(context.bot, message.chat.id, gemini_response)
+
+    elif message.chat.type == 'private':
         gemini_response = get_gemini_reply(user_text)
         send_long_message(context.bot, message.chat.id, gemini_response)
-
 def overthink(update, context):
     message = update.message
 
@@ -122,6 +123,7 @@ def overthink(update, context):
 dispatcher = Dispatcher(bot, None, workers=4)
 dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 dispatcher.add_handler(InlineQueryHandler(inline_query))
+dispatcher.add_handler(CommandHandler("overthink", overthink))
 
 # Webhook route
 @app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
