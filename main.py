@@ -133,14 +133,7 @@ def webhook():
     return "OK", 200
 
 
-if "message" in data:
-    chat_id = data["message"]["chat"]["id"]
-    text = data["message"].get("text", "")
 
-    # If it's a private DM
-    if data["message"]["chat"]["type"] == "private":
-        reply = your_gemini_ai_function(text)
-        send_message(chat_id, reply)
         
 # Health check route
 @app.route("/")
